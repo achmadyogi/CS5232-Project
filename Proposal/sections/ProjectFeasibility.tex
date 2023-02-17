@@ -1,0 +1,12 @@
+\section{Project Feasibility}
+\setcounter{subsection}{0}
+\renewcommand*{\thesubsection}{\Alph{subsection}.}
+
+\paragraph{}
+The paper demonstrates Chain Replication performance compared with Primay/Backup in terms of throughput. Whereas in formal specification, we tend to focus more on its correctness and consistency, which is not mentioned in the paper. Therefore, we might face several challanges when building a formal spesification for the protocol. 
+
+\paragraph{}
+First, the fundamental part is that we have to establish the equivalent TLA+ properties and invariance towards the protocol that the paper only explains its high-level overview. We need to apply many state transitions such that we might produce some implicit modifications that give different outputs or behaviors. 
+
+\paragraph{}
+Second, in Chail Replication, all servers take part of the message deliverability. Hence, if server failures happen too frequently, some data might be lost. If we apply message lost or server failure in TLA+, we need to find someway to limit their occurence such that the probability of the events is less than a half or smaller.
