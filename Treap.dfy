@@ -9,6 +9,9 @@ class Treap {
   method Delete(value: int) {}
   method Search(value: int) {}
 
+  method RotateLeft(node: TreapNode) {}
+  method RotateRight(node: TreapNode) {}
+
   // To allow for different implementation of RNG
   // to be easily swapped. Change signature if needed
   method RandomNumberGenerator() returns (priority: int) {
