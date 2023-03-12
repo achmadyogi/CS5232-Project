@@ -52,9 +52,56 @@ class Treap {
     return null;
   }
 
-  method RotateLeft(node: TreapNode) {
+  method RotateLeft(node: TreapNode)
+    returns (newNode: TreapNode)
+    requires node.right != null
+    requires node.Valid()
+    modifies node.repr
+    ensures old(node.repr) == newNode.repr // No change in reachability
+    ensures newNode.Valid() // Answer is valid
+    ensures newNode == old(node.right)
+    ensures newNode.right == old(newNode.right)
+    ensures newNode.left == node
+    ensures node.right == old(node.right.left)
+    ensures node.left == old(node.left)
+  {
+    newNode := node.right;
+    var tempNode := newNode.left;
+    newNode.left:= node;
+    node.repr := node.repr -newNode.repr;
+    node.right:= tempNode;
+    if(tempNode != null) {
+      // need to add repr of tempNode into node to maintain validity
+      node.repr := node.repr + tempNode.repr + {tempNode};
+    }
+    newNode.repr := newNode.repr + node.repr;
+    return newNode;
   }
-  method RotateRight(node: TreapNode) {}
+
+  method RotateRight(node: TreapNode)
+    returns (newNode: TreapNode)
+    requires node.left != null
+    requires node.Valid()
+    modifies node.repr
+    ensures newNode.Valid()
+    ensures newNode == old(node.left)
+    ensures newNode.left== old(newNode.left)
+    ensures newNode.right == node
+    ensures node.left == old(node.left.right)
+    ensures node.right== old(node.right)
+  {
+    newNode := node.left;
+    var tempNode := newNode.right;
+    newNode.right := node;
+    node.repr := node.repr - newNode.repr;
+    node.left := tempNode;
+    if(tempNode != null) {
+      // need to add repr of tempNode into node to maintain validity
+      node.repr := node.repr + tempNode.repr + {tempNode};
+    }
+    newNode.repr := newNode.repr + node.repr;
+    return newNode;
+  }
 
   // To allow for different implementation of RNG
   // to be easily swapped. Change signature if needed

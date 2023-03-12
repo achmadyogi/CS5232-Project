@@ -22,6 +22,10 @@ class TreapNode {
          && this !in right.repr
          && right.repr <= repr
          && right.Valid())
+    && ( // Extra check to ensure only one path between 2 nodes.
+       right != null && right.Valid() && left != null && left.Valid() ==>
+         (forall x :: x in left.repr ==> x !in right.repr) &&
+         (forall y :: y in right.repr ==> y !in left.repr))
   }
 
   constructor (key:int, priority:int) {
