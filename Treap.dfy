@@ -4,7 +4,9 @@ class Treap {
   var root: TreapNode?
   var prioritySet: set<int> //Keeps track of what priority was used.
 
-  constructor () {
+  constructor () 
+  ensures Valid()
+  {
     this.root := null;
   }
 
@@ -16,7 +18,22 @@ class Treap {
 
 
   method Build(values: array<int>) {}
-  method Insert(value: int) {}
+  method Insert(value: int) 
+    modifies this;
+    modifies if this.root != null then this.root.repr else {}
+    requires this.root != null ==> this.root.Valid()
+    // requires this.root != null ==> this.root in this.root.repr
+    // ensures this.root != null ==> this.root.Valid()
+  {
+    var priority := value * 123 % 1000;
+    var node := new TreapNode(value, priority);
+    if (this.root != null) {
+      this.root.insertNode(node);
+    } else {
+      this.root := node;
+    }
+  }
+
   method Delete(value: int) {
   }
 
@@ -50,6 +67,13 @@ class Treap {
       return ans;
     }
     return null;
+  }
+
+  method InOrderTraversal() 
+  {
+    if (this.root != null) {
+      print this.root.key;
+    }
   }
 
   method RotateLeft(node: TreapNode)
@@ -113,6 +137,8 @@ class Treap {
 // Used for testing
 method Main() {
   var treap := new Treap();
+  treap.Insert(3);
+  treap.InOrderTraversal();
   var result := treap.RandomNumberGenerator();
   print (result);
 }

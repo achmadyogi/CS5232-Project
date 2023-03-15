@@ -28,7 +28,35 @@ class TreapNode {
          (forall y :: y in right.repr ==> y !in left.repr))
   }
 
-  constructor (key:int, priority:int) {
+  method insertNode(node: TreapNode?) 
+    requires this.Valid()
+    modifies this.repr
+    decreases this.repr
+  {
+    if (node == null) {return;}
+    if (node.key < this.key) {
+        // Go to the left
+        if (this.left == null) {
+            this.repr := this.repr + node.repr;
+            this.left := node;
+        } else {
+            this.left.insertNode(node);
+            // TODO: check priority
+        }
+    } else {
+      if (this.right == null) {
+            this.repr := this.repr + node.repr;
+            this.right := node;
+        } else {
+            this.right.insertNode(node);
+            // TODO: check priority
+        }
+    }
+  }
+
+  constructor (key:int, priority:int) 
+  ensures Valid() && fresh(repr)
+  {
     this.key := key;
     this.priority := priority;
     this.left := null;
