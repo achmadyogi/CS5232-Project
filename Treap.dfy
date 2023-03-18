@@ -240,38 +240,38 @@ class Treap {
     return -1;
   }
 
-  method test()
-    modifies this
-    requires Valid()
-    ensures Valid()
-  {
-    var root := new TreapNode(5,10);
-    var left := new TreapNode(2,4);
-    var right := new TreapNode(7,5);
-    root.left := left;
-    root.right := right;
-    root.repr := {root, left, right};
-    repr := {this, root, left, right};
-    assert left.Valid();
-    assert right.Valid();
-    assert root.Valid();
-    this.root := root;
-  }
+  // method test()
+  //   modifies this
+  //   requires Valid()
+  //   ensures Valid()
+  // {
+  //   var root := new TreapNode(5,10);
+  //   var left := new TreapNode(2,4);
+  //   var right := new TreapNode(7,5);
+  //   root.left := left;
+  //   root.right := right;
+  //   root.repr := {root, left, right};
+  //   repr := {this, root, left, right};
+  //   assert left.Valid();
+  //   assert right.Valid();
+  //   assert root.Valid();
+  //   this.root := root;
+  // }
 
 }
 
 // Used for testing
 method Main() {
-  // var treap := new Treap();
+  var treap := new Treap();
   // treap.test();
 
-  // var result1 := treap.Search(10);
-  // var result2 := treap.Search(5);
-  // // treap.Delete(5);
-  // treap.Insert(3);
-  // treap.InOrderTraversal();
-  // var result := treap.RandomNumberGenerator();
-  // print (result1);
-  // print ("\n");
-  // print (result2);
+  var result1 := treap.Search(10);
+  var result2 := treap.Search(5);
+  treap.Delete(5);
+  treap.Insert(3);
+  treap.InOrderTraversal();
+  var result := treap.RandomNumberGenerator();
+  print (result1);
+  print ("\n");
+  print (result2);
 }
