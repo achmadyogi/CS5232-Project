@@ -1,72 +1,46 @@
 include "TreapNode.dfy"
 
 class Treap {
+
   var root: TreapNode?
   var prioritySet: set<int> //Keeps track of what priority was used.
-  ghost var repr: set<object> //Keeps track of what priority was used.
+
+  ghost var repr: set<object>
 
   constructor ()
-    ensures Valid()
+    ensures Valid() && fresh(repr)
   {
-    this.root := null;
+    root := null;
     repr := {this};
   }
 
   ghost predicate Valid()
-    reads this, root, if root != null then root.repr else {}
+    reads this, repr
+    ensures Valid() ==> this in repr
   {
-    && root != null ==> (root.Valid() && root in repr)
+    this in repr &&
+    (
+    root != null ==>
+      && root in repr
+      && root.repr <= repr
+      && root.Valid()
+         )
   }
 
 
   method Build(values: array<int>) {}
 
-  // method Delete(value: int)
-  //   requires Valid()
-  //   modifies this
-  //   ensures Valid()
-  // {
-  //   if (root != null) {
-  //     var parent, node := SearchParentNode(root, value);
-  //     if (node != null) {
-  //       DeleteNode(parent, node);
-  //     }
-  //   }
-  // }
-
-  // method DeleteNode(parent: TreapNode?, node: TreapNode)
-  //   requires Valid()
-  //   requires node.Valid()
-  //   requires parent != null ==> parent.Valid()
-  //   requires parent != null ==> node == parent.left || node == parent.right
-  //   modifies this, parent, node
-  //   ensures parent != null ==> parent.Valid()
-  //   ensures Valid()
-  // {
-  //   if(node.IsLeaf()) {
-  //     if(parent != null) {
-  //       if(parent.left == node) {
-  //         parent.repr := parent.repr - parent.left.repr;
-  //         parent.left := null;
-  //         return;
-  //       }
-  //       // if(parent.right == node) {
-  //       //   parent.right := null;
-  //       //   return;
-  //       // }
-  //     }
-  //   }
-  // }
-
   method Delete(value: int)
-    modifies this, root, if root != null then root.repr else {}
+    modifies repr
     requires Valid()
     ensures Valid()
   {
     if (root != null) {
-      this.root := DeleteNode(root, value);
+      root := DeleteNode(root, value);
       if (root != null) {
         repr := repr + root.repr;
+      } else {
+        repr := {this};
       }
     }
   }
@@ -87,32 +61,6 @@ class Treap {
     }
   }
 
-
-  method editroot()
-    modifies this, root, if root != null then root.repr else {}
-    requires Valid()
-    ensures Valid()
-  {
-    if(root != null) {
-      root := addleft(root);
-      repr := repr + root.repr;
-    }
-  }
-
-  method addleft(node: TreapNode)
-    returns (newNode:TreapNode)
-    modifies node.repr
-    requires node.Valid()
-    ensures newNode.Valid()
-  {
-    newNode := node;
-    assert newNode.Valid();
-    if (newNode.left == null){
-      newNode.left := new TreapNode(1,2);
-      newNode.repr := newNode.repr + newNode.left.repr;
-    }
-  }
-
   method DeleteNode(currRoot: TreapNode, value: int)
     returns (newNode: TreapNode?)
     modifies currRoot.repr
@@ -122,9 +70,7 @@ class Treap {
     decreases currRoot.repr
   {
     newNode := currRoot;
-    assert newNode.Valid();
     if (newNode.left != null && value < newNode.key) {
-      assert newNode.left.Valid();
       var newLeft := DeleteNode(newNode.left, value);
       newNode.left :=  newLeft;
       if(newLeft != null) {
@@ -165,46 +111,12 @@ class Treap {
     }
   }
 
-  // method BubbleDown(currParent: TreapNode?, node: TreapNode)
-  //   requires Valid()
-  //   requires node.Valid()
-  //   requires currParent != null ==> currParent.Valid()
-  //   requires currParent != null ==> (currParent.left == node || currParent.right == node)
-  //   modifies this, currParent, node, node.repr
-  //   ensures currParent != null && currParent.left == node ==> currParent.repr == old(currParent.repr)
-  //   ensures Valid()
-  //   {
-  //     // node has children
-  //     if(!node.IsLeaf()) {
-  //       var left := node.left;
-  //       var right := node.right;
-  //       var newRoot := node;
-  //       if(left != null && right != null) {
-  //         // rotate right if left priority is bigger
-  //         if(left.priority > right.priority) {
-  //           newRoot := RotateRight(node);
-  //         } else {
-  //           newRoot := RotateLeft(node);
-  //         }
-  //       } else if (right != null) {
-  //           newRoot := RotateLeft(node);
-  //       } else if (left != null) {
-  //           newRoot := RotateRight(node);
-  //       }
-  //       // if(currParent != null) {
-  //       //   if(currParent.left == node) {
-  //       //     currParent.left := newRoot;
-  //       //   }
-  //       // }
-  //     }
-  //   }
-
   // Initial search entry point
   method Search(value: int) returns (node: TreapNode?)
     requires Valid() // Tree is valid before search
     ensures Valid() // Tress is valid after search
-    ensures if node != null then node.key == value else true // Return node has correct value
-    ensures if node != null then node.Valid() else true // Return node is valid
+    ensures node != null ==> node.key == value // Return node has correct value
+    ensures node != null ==> node.Valid() // Return node is valid
   {
     if(root == null){
       return null;
@@ -236,51 +148,32 @@ class Treap {
   }
 
   // Recursive search with parent node returned too, useful for delete
-  method ParentNode(currRoot: TreapNode, targetNode: TreapNode)
-    returns (parent: TreapNode?)
-    requires Valid()
-    requires currRoot.Valid()
-    requires targetNode.Valid()
-    ensures parent != null ==> parent.Valid()
-    ensures parent != null ==> (parent.left == targetNode || parent.right == targetNode)
-    ensures Valid()
-    decreases currRoot.repr
-  {
-    if (currRoot == targetNode) {
-      return null;
-    }
-    if (currRoot.left == targetNode || currRoot.right == targetNode) {
-      return currRoot;
-    }
-    if (targetNode.key > currRoot.key && currRoot.right != null) {
-      parent := ParentNode(currRoot.right, targetNode);
-      return parent;
-    }
-    if (targetNode.key <= currRoot.key && currRoot.left!= null) {
-      parent := ParentNode(currRoot.left, targetNode);
-      return parent;
-    }
-    return null;
-  }
-
-  // ghost method DeleteRepr(currRoot: TreapNode, node: TreapNode)
+  // method ParentNode(currRoot: TreapNode, targetNode: TreapNode)
+  //   returns (parent: TreapNode?)
   //   requires Valid()
   //   requires currRoot.Valid()
-  //   modifies currRoot.repr
-  //   // ensures Valid()
+  //   requires targetNode.Valid()
+  //   ensures parent != null ==> parent.Valid()
+  //   ensures parent != null ==> (parent.left == targetNode || parent.right == targetNode)
+  //   ensures Valid()
   //   decreases currRoot.repr
   // {
-  //   if(node in currRoot.repr) {
-  //     if(currRoot.left != null && node in currRoot.left.repr) {
-  //       DeleteRepr(currRoot.left, node);
-  //     }
-  //     if(currRoot.right != null && node in currRoot.right.repr) {
-  //       DeleteRepr(currRoot.right, node);
-  //     }
-  //     currRoot.repr := currRoot.repr - {node};
+  //   if (currRoot == targetNode) {
+  //     return null;
   //   }
+  //   if (currRoot.left == targetNode || currRoot.right == targetNode) {
+  //     return currRoot;
+  //   }
+  //   if (targetNode.key > currRoot.key && currRoot.right != null) {
+  //     parent := ParentNode(currRoot.right, targetNode);
+  //     return parent;
+  //   }
+  //   if (targetNode.key <= currRoot.key && currRoot.left!= null) {
+  //     parent := ParentNode(currRoot.left, targetNode);
+  //     return parent;
+  //   }
+  //   return null;
   // }
-
 
   method InOrderTraversal()
   {
@@ -358,27 +251,27 @@ class Treap {
     root.left := left;
     root.right := right;
     root.repr := {root, left, right};
+    repr := {this, root, left, right};
     assert left.Valid();
     assert right.Valid();
     assert root.Valid();
     this.root := root;
-    // Delete(5);
   }
 
 }
 
 // Used for testing
 method Main() {
-  var treap := new Treap();
-  treap.test();
+  // var treap := new Treap();
+  // treap.test();
 
-  var result1 := treap.Search(10);
-  var result2 := treap.Search(5);
-  // treap.Delete(5);
-  treap.Insert(3);
-  treap.InOrderTraversal();
-  var result := treap.RandomNumberGenerator();
-  print (result1);
-  print ("\n");
-  print (result2);
+  // var result1 := treap.Search(10);
+  // var result2 := treap.Search(5);
+  // // treap.Delete(5);
+  // treap.Insert(3);
+  // treap.InOrderTraversal();
+  // var result := treap.RandomNumberGenerator();
+  // print (result1);
+  // print ("\n");
+  // print (result2);
 }
