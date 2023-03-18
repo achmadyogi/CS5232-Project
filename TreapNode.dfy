@@ -52,6 +52,7 @@ class TreapNode {
       }
     }
   }
+
   predicate IsLeaf()
     reads this
   {
@@ -62,6 +63,7 @@ class TreapNode {
   constructor (key:int, priority:int)
     ensures Valid()
     ensures repr == {this}
+    ensures fresh(repr)
   {
     this.key := key;
     this.priority := priority;

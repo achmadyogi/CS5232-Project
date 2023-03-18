@@ -30,10 +30,61 @@ class Treap {
 
   method Build(values: array<int>) {}
 
+  method Insert(value: int)
+    modifies repr
+    requires Valid()
+    ensures Valid()
+    ensures fresh(repr - old(repr))
+  {
+    var newRoot := InsertNode(root, value);
+    root := newRoot;
+    repr := root.repr + {this};
+  }
+
+  method InsertNode(currNode: TreapNode?, value: int)
+    returns (newNode: TreapNode)
+    requires currNode != null ==> currNode.Valid()
+    modifies if currNode != null then currNode.repr else {}
+    ensures currNode == null ==> fresh(newNode.repr)
+    ensures currNode != null ==> fresh(newNode.repr - old(currNode.repr))
+    ensures newNode.Valid()
+    decreases if currNode != null then currNode.repr else {}
+  {
+    if (currNode == null) {
+      // TODO Change priority and check no repeats
+      var priority := value * 123 % 1000;
+      newNode := new TreapNode(value, priority);
+      assert newNode.Valid();
+      return newNode;
+    } else if (value < currNode.key) {
+      var newNodeLeft := InsertNode(currNode.left, value);
+      currNode.left := newNodeLeft;
+      currNode.repr := currNode.repr + currNode.left.repr;
+      // Do rotation if needed
+      newNode := currNode;
+      if (currNode.left.priority > currNode.priority) {
+        newNode := RotateRight(currNode);
+      }
+      return newNode;
+    } else {
+      var newNodeRight := InsertNode(currNode.right, value);
+      currNode.right := newNodeRight;
+      currNode.repr := currNode.repr + currNode.right.repr;
+      // Do rotation if needed
+      newNode := currNode;
+      if (currNode.right.priority > currNode.priority) {
+        newNode := RotateLeft(currNode);
+      }
+      return newNode;
+    }
+    newNode := currNode;
+  }
+
   method Delete(value: int)
     modifies repr
     requires Valid()
     ensures Valid()
+    ensures fresh(repr - old(repr))
   {
     if (root != null) {
       root := DeleteNode(root, value);
@@ -42,22 +93,6 @@ class Treap {
       } else {
         repr := {this};
       }
-    }
-  }
-
-  method Insert(value: int)
-    modifies this;
-    modifies if this.root != null then this.root.repr else {}
-    requires this.root != null ==> this.root.Valid()
-    // requires this.root != null ==> this.root in this.root.repr
-    // ensures this.root != null ==> this.root.Valid()
-  {
-    var priority := value * 123 % 1000;
-    var node := new TreapNode(value, priority);
-    if (this.root != null) {
-      this.root.insertNode(node);
-    } else {
-      this.root := node;
     }
   }
 
@@ -147,42 +182,31 @@ class Treap {
     return null;
   }
 
-  // Recursive search with parent node returned too, useful for delete
-  // method ParentNode(currRoot: TreapNode, targetNode: TreapNode)
-  //   returns (parent: TreapNode?)
-  //   requires Valid()
-  //   requires currRoot.Valid()
-  //   requires targetNode.Valid()
-  //   ensures parent != null ==> parent.Valid()
-  //   ensures parent != null ==> (parent.left == targetNode || parent.right == targetNode)
-  //   ensures Valid()
-  //   decreases currRoot.repr
-  // {
-  //   if (currRoot == targetNode) {
-  //     return null;
-  //   }
-  //   if (currRoot.left == targetNode || currRoot.right == targetNode) {
-  //     return currRoot;
-  //   }
-  //   if (targetNode.key > currRoot.key && currRoot.right != null) {
-  //     parent := ParentNode(currRoot.right, targetNode);
-  //     return parent;
-  //   }
-  //   if (targetNode.key <= currRoot.key && currRoot.left!= null) {
-  //     parent := ParentNode(currRoot.left, targetNode);
-  //     return parent;
-  //   }
-  //   return null;
-  // }
-
-  method InOrderTraversal()
+  method InOrderTraversal(node: TreapNode?)
+    requires node != null ==> node.Valid()
+    decreases if node != null then node.repr else {}
   {
-    if (this.root != null) {
-      print this.root.key;
+    if (node != null) {
+      InOrderTraversal(node.left);
+      print (node.key, node.priority);
+      print "\n";
+      InOrderTraversal(node.right);
     }
   }
 
-  static method RotateLeft(node: TreapNode)
+  method PreOrderTraversal(node: TreapNode?)
+    requires node != null ==> node.Valid()
+    decreases if node != null then node.repr else {}
+  {
+    if (node != null) {
+      print (node.key, node.priority);
+      print "\n";
+      InOrderTraversal(node.left);
+      InOrderTraversal(node.right);
+    }
+  }
+
+  method RotateLeft(node: TreapNode)
     returns (newNode: TreapNode)
     requires node.right != null
     requires node.Valid()
@@ -208,7 +232,7 @@ class Treap {
     newNode.repr := newNode.repr + node.repr;
   }
 
-  static method RotateRight(node: TreapNode)
+  method RotateRight(node: TreapNode)
     returns (newNode: TreapNode)
     requires node.Valid()
     requires node.left != null
@@ -239,39 +263,37 @@ class Treap {
   method RandomNumberGenerator() returns (priority: int) {
     return -1;
   }
-
-  // method test()
-  //   modifies this
-  //   requires Valid()
-  //   ensures Valid()
-  // {
-  //   var root := new TreapNode(5,10);
-  //   var left := new TreapNode(2,4);
-  //   var right := new TreapNode(7,5);
-  //   root.left := left;
-  //   root.right := right;
-  //   root.repr := {root, left, right};
-  //   repr := {this, root, left, right};
-  //   assert left.Valid();
-  //   assert right.Valid();
-  //   assert root.Valid();
-  //   this.root := root;
-  // }
-
 }
 
 // Used for testing
 method Main() {
   var treap := new Treap();
-  // treap.test();
-
-  var result1 := treap.Search(10);
-  var result2 := treap.Search(5);
-  treap.Delete(5);
   treap.Insert(3);
-  treap.InOrderTraversal();
-  var result := treap.RandomNumberGenerator();
-  print (result1);
-  print ("\n");
-  print (result2);
+  treap.Insert(4);
+  treap.Insert(2);
+  treap.Insert(1);
+  treap.Insert(10);
+  treap.InOrderTraversal(treap.root);
+
+
+  treap.PreOrderTraversal(treap.root);
+
+  var node4 := treap.Search(4);
+  print (node4);
+  print "\n";
+
+  treap.Delete(4);
+  print (node4);
+  print "\n";
+
+  var node4AfterDelete := treap.Search(4);
+  print (node4AfterDelete);
+  print "\n";
+
+  treap.InOrderTraversal(treap.root);
+
+  treap.Delete(10);
+  treap.PreOrderTraversal(treap.root);
+
+  // var result := treap.RandomNumberGenerator();
 }
