@@ -27,6 +27,31 @@ class TreapNode {
                        (forall y :: y in right.repr ==> y !in left.repr)))
   }
 
+  method insertNode(node: TreapNode?) 
+    requires this.Valid()
+    modifies this.repr
+    decreases this.repr
+  {
+    if (node == null) {return;}
+    if (node.key < this.key) {
+        // Go to the left
+        if (this.left == null) {
+            this.repr := this.repr + node.repr;
+            this.left := node;
+        } else {
+            this.left.insertNode(node);
+            // TODO: check priority
+        }
+    } else {
+      if (this.right == null) {
+            this.repr := this.repr + node.repr;
+            this.right := node;
+        } else {
+            this.right.insertNode(node);
+            // TODO: check priority
+        }
+    }
+  }
   predicate IsLeaf()
     reads this
   {

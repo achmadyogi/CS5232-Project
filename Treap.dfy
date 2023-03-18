@@ -20,7 +20,6 @@ class Treap {
 
 
   method Build(values: array<int>) {}
-  method Insert(value: int) {}
 
   // method Delete(value: int)
   //   requires Valid()
@@ -71,6 +70,23 @@ class Treap {
       }
     }
   }
+
+  method Insert(value: int)
+    modifies this;
+    modifies if this.root != null then this.root.repr else {}
+    requires this.root != null ==> this.root.Valid()
+    // requires this.root != null ==> this.root in this.root.repr
+    // ensures this.root != null ==> this.root.Valid()
+  {
+    var priority := value * 123 % 1000;
+    var node := new TreapNode(value, priority);
+    if (this.root != null) {
+      this.root.insertNode(node);
+    } else {
+      this.root := node;
+    }
+  }
+
 
   method editroot()
     modifies this, root, if root != null then root.repr else {}
@@ -266,6 +282,13 @@ class Treap {
   // }
 
 
+  method InOrderTraversal()
+  {
+    if (this.root != null) {
+      print this.root.key;
+    }
+  }
+
   static method RotateLeft(node: TreapNode)
     returns (newNode: TreapNode)
     requires node.right != null
@@ -349,10 +372,13 @@ method Main() {
   var treap := new Treap();
   treap.test();
 
-  var result := treap.Search(10);
+  var result1 := treap.Search(10);
   var result2 := treap.Search(5);
-  treap.Delete(5);
-  print (result);
+  // treap.Delete(5);
+  treap.Insert(3);
+  treap.InOrderTraversal();
+  var result := treap.RandomNumberGenerator();
+  print (result1);
   print ("\n");
   print (result2);
 }
