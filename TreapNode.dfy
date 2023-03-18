@@ -14,12 +14,12 @@ class TreapNode {
     && ( left != null ==>
          && left in repr
          && this !in left.repr
-         && left.repr < repr
+         && left.repr <= repr
          && left.Valid())
     && ( right != null ==>
          && right in repr
          && this !in right.repr
-         && right.repr < repr
+         && right.repr <= repr
          && right.Valid())
     && ( // Extra check to ensure only one path between 2 nodes.
        (right != null && left != null) ==>
