@@ -5,50 +5,57 @@ class Treap {
   var root: TreapNode?
   var prioritySet: set<int> //Keeps track of what priority was used.
 
-  ghost var repr: set<object>
+  ghost var Repr: set<object>
+  ghost var Values : set<int>
 
   constructor ()
-    ensures Valid() && fresh(repr)
+    ensures Valid() && fresh(Repr) && Values == {}
   {
     root := null;
-    repr := {this};
+    Repr := {this};
+    Values := {};
   }
 
   ghost predicate Valid()
-    reads this, repr
-    ensures Valid() ==> this in repr
+    reads this, Repr
+    ensures Valid() ==> this in Repr
   {
-    this in repr &&
+    this in Repr &&
     (
     root != null ==>
-      && root in repr
-      && root.repr <= repr
+      && root in Repr
+      && root.Repr <= Repr
       && root.Valid()
+      && Values == root.Values
          )
+    && (root == null ==> Values == {})
   }
 
 
   method Build(values: array<int>) {}
 
   method Insert(value: int)
-    modifies repr
+    modifies Repr
     requires Valid()
     ensures Valid()
-    ensures fresh(repr - old(repr))
+    ensures fresh(Repr - old(Repr))
+    ensures Values == old(Values) + {value}
   {
     var newRoot := InsertNode(root, value);
     root := newRoot;
-    repr := root.repr + {this};
+    Repr := root.Repr + {this};
+    Values := Values + {value};
   }
 
   method InsertNode(currNode: TreapNode?, value: int)
     returns (newNode: TreapNode)
     requires currNode != null ==> currNode.Valid()
-    modifies if currNode != null then currNode.repr else {}
-    ensures currNode == null ==> fresh(newNode.repr)
-    ensures currNode != null ==> fresh(newNode.repr - old(currNode.repr))
+    modifies if currNode != null then currNode.Repr else {}
+    ensures currNode == null ==> fresh(newNode.Repr)
+    ensures currNode != null ==> fresh(newNode.Repr - old(currNode.Repr))
     ensures newNode.Valid()
-    decreases if currNode != null then currNode.repr else {}
+    ensures if currNode != null then newNode.Values == old(currNode.Values) + {value} else newNode.Values == {value}
+    decreases if currNode != null then currNode.Repr else {}
   {
     if (currNode == null) {
       // TODO Change priority and check no repeats
@@ -59,19 +66,22 @@ class Treap {
     } else if (value < currNode.key) {
       var newNodeLeft := InsertNode(currNode.left, value);
       currNode.left := newNodeLeft;
-      currNode.repr := currNode.repr + currNode.left.repr;
+      currNode.Repr := currNode.Repr + currNode.left.Repr;
+      currNode.Values:= currNode.Values + {value};
       // Do rotation if needed
       newNode := currNode;
       if (currNode.left.priority > currNode.priority) {
         newNode := RotateRight(currNode);
       }
       return newNode;
-    } else {
+    } else if (value > currNode.key) {
       var newNodeRight := InsertNode(currNode.right, value);
       currNode.right := newNodeRight;
-      currNode.repr := currNode.repr + currNode.right.repr;
+      currNode.Repr := currNode.Repr + currNode.right.Repr;
+      currNode.Values:= currNode.Values + {value};
       // Do rotation if needed
       newNode := currNode;
+      assert newNode.Valid();
       if (currNode.right.priority > currNode.priority) {
         newNode := RotateLeft(currNode);
       }
@@ -81,41 +91,48 @@ class Treap {
   }
 
   method Delete(value: int)
-    modifies repr
+    modifies Repr
     requires Valid()
     ensures Valid()
-    ensures fresh(repr - old(repr))
+    ensures fresh(Repr - old(Repr))
+    ensures Values == old(Values) - {value}
   {
     if (root != null) {
       root := DeleteNode(root, value);
       if (root != null) {
-        repr := repr + root.repr;
+        Repr := Repr + root.Repr;
+        Values := root.Values;
       } else {
-        repr := {this};
+        Repr := {this};
+        Values := {};
       }
     }
   }
 
   method DeleteNode(currRoot: TreapNode, value: int)
     returns (newNode: TreapNode?)
-    modifies currRoot.repr
+    modifies currRoot.Repr
     requires currRoot.Valid()
     ensures newNode != null ==> newNode.Valid()
-    ensures newNode != null ==> fresh(newNode.repr - old(currRoot.repr))
-    decreases currRoot.repr
+    ensures newNode != null ==> fresh(newNode.Repr - old(currRoot.Repr))
+    ensures newNode != null ==> newNode.Values == old(currRoot.Values) - {value}
+    ensures newNode == null ==> old(currRoot.Values) <= {value}
+    decreases currRoot.Repr
   {
     newNode := currRoot;
     if (newNode.left != null && value < newNode.key) {
       var newLeft := DeleteNode(newNode.left, value);
+      newNode.Values := newNode.Values - {value};
       newNode.left :=  newLeft;
       if(newLeft != null) {
-        newNode.repr := newNode.repr + newNode.left.repr;
+        newNode.Repr := newNode.Repr + newNode.left.Repr;
       }
     } else if (newNode.right != null && value > newNode.key){
       var newRight := DeleteNode(newNode.right, value);
+      newNode.Values := newNode.Values - {value};
       newNode.right := newRight;
       if(newRight != null) {
-        newNode.repr := newNode.repr + newNode.right.repr;
+        newNode.Repr := newNode.Repr + newNode.right.Repr;
       }
     } else if (newNode.key == value) {
       // Delete
@@ -130,16 +147,18 @@ class Treap {
         if (newNode.right.priority >= newNode.left.priority) {
           newNode := RotateLeft(newNode);
           var newNodeLeft := DeleteNode(newNode.left, value);
+          newNode.Values := newNode.Values - {value};
           newNode.left := newNodeLeft;
           if(newNodeLeft != null) {
-            newNode.repr := newNode.repr + newNodeLeft.repr;
+            newNode.Repr := newNode.Repr + newNodeLeft.Repr;
           }
         } else {
           newNode := RotateRight(newNode);
           var newNodeRight := DeleteNode(newNode.right, value);
+          newNode.Values := newNode.Values - {value};
           newNode.right := newNodeRight;
           if(newNodeRight != null) {
-            newNode.repr := newNode.repr + newNodeRight.repr;
+            newNode.Repr := newNode.Repr + newNodeRight.Repr;
           }
         }
       }
@@ -166,7 +185,7 @@ class Treap {
     requires currRoot.Valid()
     ensures node != null ==> node.key == value
     ensures node != null ==> node.Valid()
-    decreases currRoot.repr
+    decreases currRoot.Repr
   {
     if (currRoot.key == value) {
       return currRoot;
@@ -184,7 +203,7 @@ class Treap {
 
   method InOrderTraversal(node: TreapNode?)
     requires node != null ==> node.Valid()
-    decreases if node != null then node.repr else {}
+    decreases if node != null then node.Repr else {}
   {
     if (node != null) {
       InOrderTraversal(node.left);
@@ -196,7 +215,7 @@ class Treap {
 
   method PreOrderTraversal(node: TreapNode?)
     requires node != null ==> node.Valid()
-    decreases if node != null then node.repr else {}
+    decreases if node != null then node.Repr else {}
   {
     if (node != null) {
       print (node.key, node.priority);
@@ -210,8 +229,9 @@ class Treap {
     returns (newNode: TreapNode)
     requires node.right != null
     requires node.Valid()
-    modifies node.repr
-    ensures old(node.repr) == newNode.repr // No change in reachability
+    modifies node.Repr
+    ensures old(node.Values) == newNode.Values// No change in content
+    ensures old(node.Repr) == newNode.Repr // No change in reachability
     ensures newNode.Valid() // Answer is valid
     ensures newNode == old(node.right)
     ensures newNode.right == old(newNode.right)
@@ -222,23 +242,27 @@ class Treap {
     newNode := node.right;
     var tempNode := newNode.left;
     newNode.left:= node;
-    node.repr := node.repr -newNode.repr;
+    node.Repr := node.Repr - newNode.Repr;
+    node.Values := node.Values - newNode.Values;
     node.right:= tempNode;
     if(tempNode != null) {
-      // need to add repr of tempNode into node to maintain validity
+      // need to add Repr of tempNode into node to maintain validity
       assert tempNode.Valid();
-      node.repr := node.repr + tempNode.repr;
+      node.Repr := node.Repr + tempNode.Repr;
+      node.Values:= node.Values+ tempNode.Values;
     }
-    newNode.repr := newNode.repr + node.repr;
+    newNode.Repr := newNode.Repr + node.Repr;
+    newNode.Values := newNode.Values + node.Values;
   }
 
   method RotateRight(node: TreapNode)
     returns (newNode: TreapNode)
     requires node.Valid()
     requires node.left != null
-    modifies node.repr
+    modifies node.Repr
     ensures newNode.Valid()
-    ensures old(node.repr) == newNode.repr // No change in reachability
+    ensures old(node.Values) == newNode.Values// No change in content
+    ensures old(node.Repr) == newNode.Repr // No change in reachability
     ensures newNode == old(node.left)
     ensures newNode.left == old(newNode.left)
     ensures newNode.right == node
@@ -248,14 +272,17 @@ class Treap {
     newNode := node.left;
     var tempNode := newNode.right;
     newNode.right := node;
-    node.repr := node.repr - newNode.repr;
+    node.Repr := node.Repr - newNode.Repr;
+    node.Values:= node.Values- newNode.Values;
     node.left := tempNode;
     if(tempNode != null) {
-      // need to add repr of tempNode into node to maintain validity
+      // need to add Repr of tempNode into node to maintain validity
       assert tempNode.Valid();
-      node.repr := node.repr + tempNode.repr;
+      node.Repr := node.Repr + tempNode.Repr;
+      node.Values:= node.Values+ tempNode.Values;
     }
-    newNode.repr := newNode.repr + node.repr;
+    newNode.Repr := newNode.Repr + node.Repr;
+    newNode.Values := newNode.Values + node.Values;
   }
 
   // To allow for different implementation of RNG
@@ -273,8 +300,8 @@ method Main() {
   treap.Insert(2);
   treap.Insert(1);
   treap.Insert(10);
+  assert treap.Valid();
   treap.InOrderTraversal(treap.root);
-
 
   treap.PreOrderTraversal(treap.root);
 
@@ -293,6 +320,7 @@ method Main() {
   treap.InOrderTraversal(treap.root);
 
   treap.Delete(10);
+  assert treap.Valid();
   treap.PreOrderTraversal(treap.root);
 
   // var result := treap.RandomNumberGenerator();
