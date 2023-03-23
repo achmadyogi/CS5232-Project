@@ -126,28 +126,35 @@ class Treap {
     ensures newNode != null ==> fresh(newNode.Repr - old(currRoot.Repr))
     ensures newNode != null ==> newNode.Values == old(currRoot.Values) - {value}
     ensures newNode == null ==> old(currRoot.Values) <= {value}
+    // ensures currRoot.key == value && newNode != null ==> newNode.priority < currRoot.priority
     decreases currRoot.Repr
   {
     newNode := currRoot;
     if (newNode.left != null && value < newNode.key) {
       var newLeft := DeleteNode(newNode.left, value);
       newNode.Values := newNode.Values - {value};
+      newNode.Priorities := {newNode.priority};
       newNode.left :=  newLeft;
+      if(newNode.right != null){
+        assert newNode.priority !in newNode.right.Priorities;
+        newNode.Priorities := newNode.Priorities + newNode.right.Priorities;
+      }
       if(newLeft != null) {
         newNode.Repr := newNode.Repr + newNode.left.Repr;
-        var deletedPriority := newNode.Priorities - newLeft.Priorities - if newNode.right != null then newNode.right.Priorities else {};
-        newNode.Priorities := newNode.Priorities - deletedPriority;
-        newNode.Priorities := newNode.Priorities + {newNode.priority};
+        newNode.Priorities := newNode.Priorities + newNode.left.Priorities;
       }
     } else if (newNode.right != null && value > newNode.key){
       var newRight := DeleteNode(newNode.right, value);
+      newNode.Priorities := {newNode.priority};
       newNode.Values := newNode.Values - {value};
       newNode.right := newRight;
+      if(newNode.left != null){
+        assert newNode.priority !in newNode.left.Priorities;
+        newNode.Priorities := newNode.Priorities + newNode.left.Priorities;
+      }
       if(newRight != null) {
         newNode.Repr := newNode.Repr + newNode.right.Repr;
-        var deletedPriority := newNode.Priorities - newRight.Priorities - (if newNode.left!= null then newNode.left.Priorities else {});
-        newNode.Priorities := newNode.Priorities - deletedPriority;
-        newNode.Priorities := newNode.Priorities + {newNode.priority};
+        newNode.Priorities := newNode.Priorities + newNode.right.Priorities;
       }
     } else if (newNode.key == value) {
       // Delete
@@ -162,24 +169,30 @@ class Treap {
         if (newNode.right.priority > newNode.left.priority) {
           newNode := RotateLeft(currRoot);
           var newNodeLeft := DeleteNode(newNode.left, value);
+          newNode.Priorities := {newNode.priority};
           newNode.Values := newNode.Values - {value};
           newNode.left := newNodeLeft;
           if(newNodeLeft != null) {
             newNode.Repr := newNode.Repr + newNodeLeft.Repr;
-            var deletedPriority := newNode.Priorities - newNodeLeft.Priorities - if newNode.right!= null then newNode.right.Priorities else {};
-            newNode.Priorities := newNode.Priorities - deletedPriority;
-            newNode.Priorities := newNode.Priorities + {newNode.priority};
+            newNode.Priorities := newNode.Priorities + newNodeLeft.Priorities;
           }
-        } else if (newNode.right.priority < newNode.left.priority){
+          if(newNode.right != null){
+            assert newNode.priority !in newNode.right.Priorities;
+            newNode.Priorities := newNode.Priorities + newNode.right.Priorities;
+          }
+        } else if (newNode.right.priority < newNode.left.priority) {
           newNode := RotateRight(newNode);
           var newNodeRight := DeleteNode(newNode.right, value);
+          newNode.Priorities := {newNode.priority};
           newNode.Values := newNode.Values - {value};
           newNode.right := newNodeRight;
           if(newNodeRight != null) {
             newNode.Repr := newNode.Repr + newNodeRight.Repr;
-            var deletedPriority := newNode.Priorities - newNodeRight.Priorities - if newNode.left!= null then newNode.left.Priorities else {};
-            newNode.Priorities := newNode.Priorities - deletedPriority;
-            newNode.Priorities := newNode.Priorities + {newNode.priority};
+            newNode.Priorities := newNode.Priorities + newNode.right.Priorities;
+          }
+          if(newNode.left != null){
+            assert newNode.priority !in newNode.left.Priorities;
+            newNode.Priorities := newNode.Priorities + newNode.left.Priorities;
           }
         }
       }
@@ -261,6 +274,7 @@ class Treap {
     ensures node.right == old(node.right.left)
     ensures node.left == old(node.left)
     ensures old(node.ValidHeap()) ==> newNode.left.ValidHeap()
+    ensures old(node.ValidHeap()) && newNode.right != null ==> newNode.right.ValidHeap()
   {
     newNode := node.right;
     var tempNode := newNode.left;
@@ -296,8 +310,8 @@ class Treap {
     ensures newNode.right == node
     ensures node.left == old(node.left.right)
     ensures node.right== old(node.right)
-    // ensures old(node.left.ValidHeap()) ==> if newNode.left != null then newNode.left.ValidHeap() else true
     ensures old(node.ValidHeap()) ==> newNode.right.ValidHeap()
+    ensures old(node.ValidHeap()) && newNode.left!= null ==> newNode.left.ValidHeap()
   {
     newNode := node.left;
     var tempNode := newNode.right;

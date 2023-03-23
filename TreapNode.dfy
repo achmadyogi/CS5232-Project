@@ -36,11 +36,11 @@ class TreapNode {
                          )
     && // Extra check to ensure only one path between 2 nodes.
        (right != null && left != null ==>
-         (forall x :: x in left.Repr ==> x !in right.Repr) && (forall y :: y in left.Priorities ==> y !in right.Priorities))
-    && ((left == null && right == null) ==> Values == {key} && Priorities == {priority})
-    && ((left != null && right == null) ==> Values == {key} + left.Values && Priorities == {priority} + left.Priorities)
-    && ((left == null && right != null) ==> Values == {key} + right.Values && Priorities == {priority} + right.Priorities)
-    && ((left != null && right != null) ==> Values == {key} + left.Values + right.Values && Priorities == {priority} + left.Priorities + right.Priorities)
+         (right.Repr !! left.Repr) && (right.Priorities !! left.Priorities))
+    && ((left == null && right == null) ==> (Values == {key} && Priorities == {priority}))
+    && ((left != null && right == null) ==> (Values == {key} + left.Values && Priorities == {priority} + left.Priorities))
+    && ((left == null && right != null) ==> (Values == {key} + right.Values && Priorities == {priority} + right.Priorities))
+    && ((left != null && right != null) ==> (Values == {key} + left.Values + right.Values && Priorities == {priority} + left.Priorities + right.Priorities))
   }
 
   ghost predicate ValidHeap()
