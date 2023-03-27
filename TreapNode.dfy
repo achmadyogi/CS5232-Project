@@ -9,8 +9,6 @@ class TreapNode {
   ghost var Repr: set<TreapNode>
   // Needed to check for BST property
   ghost var Values: set<int>
-  // Needed to check for heap property
-  ghost var Priorities: set<int>
 
   ghost predicate Valid()
     reads this, Repr
@@ -20,8 +18,6 @@ class TreapNode {
          && left in Repr
          && this !in left.Repr
          && left.Repr <= Repr
-         && priority !in left.Priorities
-         && left.Priorities <= Priorities
          && left.Valid()
          && (forall x :: x in left.Values ==> x < key)  // BST property
                          )
@@ -29,18 +25,16 @@ class TreapNode {
          && right in Repr
          && this !in right.Repr
          && right.Repr <= Repr
-         && priority !in right.Priorities
-         && right.Priorities <= Priorities
          && right.Valid()
          && (forall x :: x in right.Values ==> x > key)  // BST property
                          )
     && // Extra check to ensure only one path between 2 nodes.
        (right != null && left != null ==>
-         (right.Repr !! left.Repr) && (right.Priorities !! left.Priorities))
-    && ((left == null && right == null) ==> (Values == {key} && Priorities == {priority}))
-    && ((left != null && right == null) ==> (Values == {key} + left.Values && Priorities == {priority} + left.Priorities))
-    && ((left == null && right != null) ==> (Values == {key} + right.Values && Priorities == {priority} + right.Priorities))
-    && ((left != null && right != null) ==> (Values == {key} + left.Values + right.Values && Priorities == {priority} + left.Priorities + right.Priorities))
+         (right.Repr !! left.Repr))
+    && ((left == null && right == null) ==> (Values == {key}))
+    && ((left != null && right == null) ==> (Values == {key} + left.Values))
+    && ((left == null && right != null) ==> (Values == {key} + right.Values))
+    && ((left != null && right != null) ==> (Values == {key} + left.Values + right.Values))
   }
 
   ghost predicate ValidHeap()
@@ -48,17 +42,13 @@ class TreapNode {
   {
     && Valid()
     && ( left != null ==>
+         && left.priority <= priority // Heap property
          && left.ValidHeap()
-         && forall x :: x in left.Priorities ==> x < priority  // Heap property
-                        )
+            )
     && ( right != null ==>
+         && right.priority <= priority // Heap property
          && right.ValidHeap()
-         && forall x :: x in right.Priorities ==> x < priority  // Heap property
-                        )
-       // && ((left == null && right == null) ==> Priorities == {priority})
-       // && ((left != null && right == null) ==> Priorities == {priority} + left.Priorities)
-       // && ((left == null && right != null) ==> Priorities == {priority} + right.Priorities)
-       // && ((left != null && right != null) ==> Priorities == {priority} + left.Priorities + right.Priorities)
+            )
   }
 
   predicate IsLeaf()
@@ -69,10 +59,9 @@ class TreapNode {
   }
 
   constructor (key:int, priority:int)
-    ensures Valid()
+    ensures ValidHeap()
     ensures Repr == {this}
     ensures Values == {key}
-    ensures Priorities == {priority}
     ensures fresh(Repr)
   {
     this.key := key;
@@ -81,6 +70,5 @@ class TreapNode {
     this.right := null;
     Repr := {this};
     Values := {key};
-    Priorities := {priority};
   }
 }
