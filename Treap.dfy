@@ -234,8 +234,8 @@ class Treap {
     if (node != null) {
       print (node.key, node.priority);
       print "\n";
-      InOrderTraversal(node.left);
-      InOrderTraversal(node.right);
+      PreOrderTraversal(node.left);
+      PreOrderTraversal(node.right);
     }
   }
 
@@ -381,6 +381,8 @@ method Main() {
 
   treap.Delete(10);
   assert treap.Valid();
+
+  print "\n";
   treap.InOrderTraversal(treap.root);
   print "\n";
   treap.PreOrderTraversal(treap.root);
