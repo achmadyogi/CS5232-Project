@@ -4,54 +4,53 @@ class TreapNode {
   var left: TreapNode?
   var right: TreapNode?
 
-  // Needed to ensure no cycles in between nodes
-  ghost var repr: set<TreapNode>
+  // Use to ensure nodes are acyclic, i.e tree structure
+  // Ensures recursive methods can terminate
+  ghost var Repr: set<TreapNode>
+  // Needed to check for BST property
+  ghost var Values: set<int>
 
   ghost predicate Valid()
-    reads this, repr
+    reads this, Repr
   {
-    && this in repr // node is reachable to itself
+    && this in Repr // node is reachable to itself
     && ( left != null ==>
-         && left in repr
-         && this !in left.repr
-         && left.repr < repr
-         && left.Valid())
+         && left in Repr
+         && this !in left.Repr
+         && left.Repr <= Repr
+         && left.Valid()
+         && (forall x :: x in left.Values ==> x < key)  // BST property
+                         )
     && ( right != null ==>
-         && right in repr
-         && this !in right.repr
-         && right.repr < repr
-         && right.Valid())
-    && ( // Extra check to ensure only one path between 2 nodes.
-       (right != null && left != null) ==>
-         ((forall x :: x in left.repr ==> x !in right.repr) &&
-                       (forall y :: y in right.repr ==> y !in left.repr)))
+         && right in Repr
+         && this !in right.Repr
+         && right.Repr <= Repr
+         && right.Valid()
+         && (forall x :: x in right.Values ==> x > key)  // BST property
+                         )
+    && // Extra check to ensure only one path between 2 nodes.
+       (right != null && left != null ==>
+         (right.Repr !! left.Repr))
+    && ((left == null && right == null) ==> (Values == {key}))
+    && ((left != null && right == null) ==> (Values == {key} + left.Values))
+    && ((left == null && right != null) ==> (Values == {key} + right.Values))
+    && ((left != null && right != null) ==> (Values == {key} + left.Values + right.Values))
   }
 
-  method insertNode(node: TreapNode?) 
-    requires this.Valid()
-    modifies this.repr
-    decreases this.repr
+  ghost predicate ValidHeap()
+    reads this, Repr
   {
-    if (node == null) {return;}
-    if (node.key < this.key) {
-        // Go to the left
-        if (this.left == null) {
-            this.repr := this.repr + node.repr;
-            this.left := node;
-        } else {
-            this.left.insertNode(node);
-            // TODO: check priority
-        }
-    } else {
-      if (this.right == null) {
-            this.repr := this.repr + node.repr;
-            this.right := node;
-        } else {
-            this.right.insertNode(node);
-            // TODO: check priority
-        }
-    }
+    && Valid()
+    && ( left != null ==>
+         && left.priority <= priority // Heap property
+         && left.ValidHeap()
+            )
+    && ( right != null ==>
+         && right.priority <= priority // Heap property
+         && right.ValidHeap()
+            )
   }
+
   predicate IsLeaf()
     reads this
   {
@@ -60,13 +59,16 @@ class TreapNode {
   }
 
   constructor (key:int, priority:int)
-    ensures Valid()
-    ensures repr == {this}
+    ensures ValidHeap()
+    ensures Repr == {this}
+    ensures Values == {key}
+    ensures fresh(Repr)
   {
     this.key := key;
     this.priority := priority;
     this.left := null;
     this.right := null;
-    repr := {this};
+    Repr := {this};
+    Values := {key};
   }
 }
