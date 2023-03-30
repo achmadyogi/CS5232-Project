@@ -33,7 +33,23 @@ class Treap {
   }
 
 
-  method Build(values: array<int>) {}
+  static method Build(values: array<int>) returns (treap: Treap)
+    requires values.Length != 0
+    modifies values;
+    ensures treap.Valid()
+    ensures fresh(treap.Repr)
+  {
+    treap := new Treap();
+    var i := 0;
+    while i < values.Length
+      invariant treap.Valid()
+      invariant i <= values.Length
+      invariant fresh(treap.Repr)
+    {
+      treap.Insert(values[i]);
+      i := i + 1;
+    }
+  }
 
   method Insert(value: int)
     modifies Repr
@@ -215,7 +231,7 @@ class Treap {
     return null;
   }
 
-  method InOrderTraversal(node: TreapNode?)
+  static method InOrderTraversal(node: TreapNode?)
     requires node != null ==> node.Valid()
     decreases if node != null then node.Repr else {}
   {
@@ -227,7 +243,7 @@ class Treap {
     }
   }
 
-  method PreOrderTraversal(node: TreapNode?)
+  static method PreOrderTraversal(node: TreapNode?)
     requires node != null ==> node.Valid()
     decreases if node != null then node.Repr else {}
   {
@@ -359,9 +375,9 @@ method Main() {
   treap.Insert(1);
   treap.Insert(10);
   assert treap.Valid();
-  treap.InOrderTraversal(treap.root);
+  Treap.InOrderTraversal(treap.root);
   print "\n";
-  treap.PreOrderTraversal(treap.root);
+  Treap.PreOrderTraversal(treap.root);
 
   var node4 := treap.Search(4);
   print (node4);
@@ -375,16 +391,22 @@ method Main() {
   print (node4AfterDelete);
   print "\n";
 
-  treap.InOrderTraversal(treap.root);
+  Treap.InOrderTraversal(treap.root);
   print "\n";
-  treap.PreOrderTraversal(treap.root);
+  Treap.PreOrderTraversal(treap.root);
 
   treap.Delete(10);
   assert treap.Valid();
 
   print "\n";
-  treap.InOrderTraversal(treap.root);
+  Treap.InOrderTraversal(treap.root);
   print "\n";
-  treap.PreOrderTraversal(treap.root);
+  Treap.PreOrderTraversal(treap.root);
+  print "\n";
   // var result := treap.RandomNumberGenerator();
+
+  // Build
+  var arr := new int[5][3, 4, 2, 1, 10];
+  var newTree := Treap.Build(arr);
+  Treap.InOrderTraversal(newTree.root);
 }
