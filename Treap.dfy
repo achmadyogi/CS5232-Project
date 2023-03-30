@@ -78,7 +78,7 @@ class Treap {
   {
     if (currNode == null) {
       // TODO Change priority and check no repeats
-      var priority := value * 123 % 1000;
+      var priority := Treap.RandomNumberGenerator(value);
       newNode := new TreapNode(value, priority);
       assert newNode.ValidHeap();
       return newNode;
@@ -361,8 +361,8 @@ class Treap {
 
   // To allow for different implementation of RNG
   // to be easily swapped. Change signature if needed
-  method RandomNumberGenerator() returns (priority: int) {
-    return -1;
+  static method RandomNumberGenerator(val: int) returns (priority: int) {
+    priority := (val * 654321/123) % 1000;
   }
 }
 
