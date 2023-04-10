@@ -84,7 +84,6 @@ class Treap {
       return newNode;
     } else if (value < currNode.key) {
       var newNodeLeft := InsertNode(currNode.left, value);
-      // assert newNodeLeft.right != null ==> newNodeLeft.right.priority <= cu
       currNode.left := newNodeLeft;
       currNode.Repr := currNode.Repr + currNode.left.Repr;
       currNode.Values:= currNode.Values + {value};
@@ -270,8 +269,6 @@ class Treap {
     ensures node.left == old(node.left)
     ensures old(node.ValidHeap()) ==> newNode.left.ValidHeap()
     ensures old(node.ValidHeap()) && newNode.right != null ==> newNode.right.ValidHeap()
-    ensures old(node.ValidHeap()) && old(node.left) != null && old(node.left.priority) <= old(node.right.priority) ==> newNode.priority >= newNode.left.left.priority
-    ensures old(node.ValidHeap()) && old(node.right.left) != null ==> newNode.priority >= newNode.left.right.priority
 
     // For insert
     ensures old(node.right.ValidHeap())
@@ -292,18 +289,15 @@ class Treap {
     newNode.left:= node;
     node.Repr := node.Repr - newNode.Repr;
     node.Values := node.Values - newNode.Values;
-    // node.Priorities:= node.Priorities- newNode.Priorities;
     node.right:= tempNode;
     if(tempNode != null) {
       // need to add Repr of tempNode into node to maintain validity
       assert tempNode.Valid();
       node.Repr := node.Repr + tempNode.Repr;
       node.Values:= node.Values+ tempNode.Values;
-      // node.Priorities:= node.Priorities+ tempNode.Priorities;
     }
     newNode.Repr := newNode.Repr + node.Repr;
     newNode.Values := newNode.Values + node.Values;
-    // newNode.Priorities:= newNode.Priorities+ node.Priorities;
   }
 
   method RotateRight(node: TreapNode)
@@ -323,8 +317,6 @@ class Treap {
     // For Delete
     ensures old(node.ValidHeap()) ==> newNode.right.ValidHeap()
     ensures old(node.ValidHeap()) && newNode.left!= null ==> newNode.left.ValidHeap()
-    ensures old(node.ValidHeap()) && old(node.right) != null && old(node.left.priority) >= old(node.right.priority) ==> newNode.priority >= newNode.right.right.priority
-    ensures old(node.ValidHeap()) && old(node.left.right) != null ==> newNode.priority >= newNode.right.left.priority
 
     // For insert
     ensures old(node.left.ValidHeap())
@@ -345,18 +337,15 @@ class Treap {
     newNode.right := node;
     node.Repr := node.Repr - newNode.Repr;
     node.Values:= node.Values- newNode.Values;
-    // node.Priorities := node.Priorities - newNode.Priorities;
     node.left := tempNode;
     if(tempNode != null) {
       // need to add Repr of tempNode into node to maintain validity
       assert tempNode.Valid();
       node.Repr := node.Repr + tempNode.Repr;
       node.Values:= node.Values+ tempNode.Values;
-      // node.Priorities:= node.Priorities+ tempNode.Priorities;
     }
     newNode.Repr := newNode.Repr + node.Repr;
     newNode.Values := newNode.Values + node.Values;
-    // newNode.Priorities:= newNode.Priorities+ node.Priorities;
   }
 
   // To allow for different implementation of RNG
