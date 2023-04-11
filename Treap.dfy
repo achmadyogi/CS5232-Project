@@ -1,17 +1,18 @@
 include "TreapNode.dfy"
-
+newtype {:nativeType "byte"} ubyte = x : int | 0 <= x < 256
 class Treap {
 
   var root: TreapNode?
-  var prioritySet: set<int> //Keeps track of what priority was used.
 
   ghost var Repr: set<object>
   ghost var Values : set<int>
+  ghost var Priorities: set<int> //Keeps track of what priority was used.
 
   constructor ()
     ensures Valid() && fresh(Repr) && Values == {}
   {
     root := null;
+    Priorities := {};
     Repr := {this};
     Values := {};
   }
@@ -46,6 +47,9 @@ class Treap {
       invariant i <= values.Length
       invariant fresh(treap.Repr)
     {
+      // assert values[i] !in treap.Values ==> (
+      //   forall j :: j in treap.Values ==> (values[i] * 654321/123) % 1000 != (j * 654321/123) % 1000
+      // );
       treap.Insert(values[i]);
       i := i + 1;
     }
@@ -54,6 +58,9 @@ class Treap {
   method Insert(value: int)
     modifies Repr
     requires Valid()
+    // requires value !in Values ==> (
+    //   forall i :: i in Values ==> (value * 654321/123) % 1000 != (i * 654321/123) % 1000
+    // )
     ensures Valid()
     ensures fresh(Repr - old(Repr))
     ensures Values == old(Values) + {value}
@@ -67,6 +74,9 @@ class Treap {
   method InsertNode(currNode: TreapNode?, value: int)
     returns (newNode: TreapNode)
     requires currNode != null ==> currNode.ValidHeap()
+    // requires value !in Values ==> (
+    //   forall i :: i in Values ==> (value * 654321/123) % 1000 != (i * 654321/123) % 1000
+    // )
     modifies if currNode != null then currNode.Repr else {}
     ensures currNode == null ==> fresh(newNode.Repr)
     ensures currNode != null ==> fresh(newNode.Repr - old(currNode.Repr))
@@ -78,7 +88,8 @@ class Treap {
   {
     if (currNode == null) {
       // TODO Change priority and check no repeats
-      var priority := value * 123 % 1000;
+      var priority := RandomNumberGenerator(value);
+      // i
       newNode := new TreapNode(value, priority);
       assert newNode.ValidHeap();
       return newNode;
@@ -350,8 +361,13 @@ class Treap {
 
   // To allow for different implementation of RNG
   // to be easily swapped. Change signature if needed
-  method RandomNumberGenerator() returns (priority: int) {
-    return -1;
+  method RandomNumberGenerator(val: int) returns (priority: int)
+    // requires val !in Values && val < 1000 ==> (
+    //   forall i :: i in Values && i < 1000 ==> 
+    //   (val * 654321/123) % 1000 != (i * 654321/123) % 1000
+    // )
+  {
+    priority := (val * 654321/123) % 1000;
   }
 }
 
