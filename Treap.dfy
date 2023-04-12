@@ -373,6 +373,7 @@ class Treap {
 
 // Used for testing
 method Main() {
+  print "Insert 3,4,2,1,10\n";
   var treap := new Treap();
   treap.Insert(3);
   treap.Insert(4);
@@ -380,38 +381,83 @@ method Main() {
   treap.Insert(1);
   treap.Insert(10);
   assert treap.Valid();
+  print "In Order Traversal\n";
   Treap.InOrderTraversal(treap.root);
   print "\n";
+  print "Pre Order Traversal\n";
   Treap.PreOrderTraversal(treap.root);
 
+  print "\n\n";
+  print "      (3, 939)\n";
+  print "       /    \\ \n";
+  print " (2, 639)   (4,278)\n";
+  print "   /           \\ \n";
+  print "(1,319)       (10, 196)\n";
+  print "\n\n";
+
+  print "Searching a node with key = 4\n";
   var node4 := treap.Search(4);
-  print (node4);
+  if (node4 != null) {
+    print "Node found: (",node4.key,",",node4.priority,")\n";
+  } else {
+    print "null";
+  }
   print "\n";
 
+  print "Deleting a node with key = 4\n";
   treap.Delete(4);
-  print (node4);
-  print "\n";
+  print "\n\n";
 
+  print "Searching a node with key = 4\n";
   var node4AfterDelete := treap.Search(4);
-  print (node4AfterDelete);
+  if (node4AfterDelete != null) {
+    print "Node found: (",node4AfterDelete.key,",",node4AfterDelete.priority,")\n";
+  } else {
+    print "null";
+  }
   print "\n";
 
+  print "In Order Traversal\n";
   Treap.InOrderTraversal(treap.root);
   print "\n";
+
+  print "Pre Order Traversal\n";
   Treap.PreOrderTraversal(treap.root);
 
-  treap.Delete(10);
+  print "\n\n";
+  print "      (3, 939)\n";
+  print "       /    \\ \n";
+  print " (2, 639)   (10, 196)\n";
+  print "   /           \n";
+  print "(1,319)     \n";
+  print "\n\n";
+
+  print "Deleting a node with key = 3\n";
+  treap.Delete(3);
   assert treap.Valid();
 
   print "\n";
+
+  print "In Order Traversal\n";
   Treap.InOrderTraversal(treap.root);
   print "\n";
+
+  print "Pre Order Traversal\n";
   Treap.PreOrderTraversal(treap.root);
   print "\n";
-  // var result := treap.RandomNumberGenerator();
+
+  print "\n\n";
+  print "      (2, 639)\n";
+  print "       /    \\ \n";
+  print "  (1,319)   (10, 196)\n";
+  print "\n\n";
 
   // Build
+  print "Build a new tree with input values: 3, 4, 2, 1, 10\n";
   var arr := new int[5][3, 4, 2, 1, 10];
   var newTree := Treap.Build(arr);
+  print "\n";
+
+  print "In Order Traversal\n";
   Treap.InOrderTraversal(newTree.root);
 }
