@@ -1,18 +1,15 @@
 include "TreapNode.dfy"
-newtype {:nativeType "byte"} ubyte = x : int | 0 <= x < 256
 class Treap {
 
   var root: TreapNode?
 
   ghost var Repr: set<object>
   ghost var Values : set<int>
-  ghost var Priorities: set<int> //Keeps track of what priority was used.
 
   constructor ()
     ensures Valid() && fresh(Repr) && Values == {}
   {
     root := null;
-    Priorities := {};
     Repr := {this};
     Values := {};
   }
@@ -367,10 +364,6 @@ class Treap {
   // To allow for different implementation of RNG
   // to be easily swapped. Change signature if needed
   method RandomNumberGenerator(val: int) returns (priority: int)
-    // requires val !in Values && val < 1000 ==> (
-    //   forall i :: i in Values && i < 1000 ==> 
-    //   (val * 654321/123) % 1000 != (i * 654321/123) % 1000
-    // )
   {
     priority := (val * 654321/123) % 1000;
   }
@@ -442,8 +435,8 @@ class Treap {
       // Right
       if (node.right == null) {
         leftNode := node;
-        assert leftNode != null ==> leftNode.ValidHeap();
-        assert rightNode != null ==> rightNode.ValidHeap();
+        assert leftNode != null ==> leftNode.Valid() && leftNode.ValidHeap();
+        assert rightNode != null ==> rightNode.Valid() && rightNode.ValidHeap();
         return;
       } else {
         var right := node.right;
@@ -452,8 +445,8 @@ class Treap {
         node.Values := node.Values - right.Values;
         assert node.Valid() && node.ValidHeap();
         var l, r := SplitNode(right, val);
-        assert l != null ==> l.ValidHeap();
-        assert r != null ==> r.ValidHeap();
+        assert l != null ==> l.Valid() && l.ValidHeap();
+        assert r != null ==> r.Valid() && r.ValidHeap();
         rightNode := r;
         if (l != null) {
           assert forall x :: x in l.Values ==> x in old(right.Values);
@@ -463,8 +456,8 @@ class Treap {
           node.Values := node.Values + l.Values;
         }
         leftNode := node;
-        assert leftNode != null ==> leftNode.ValidHeap();
-        assert rightNode != null ==> rightNode.ValidHeap();
+        assert leftNode != null ==> leftNode.Valid() && leftNode.ValidHeap();
+        assert rightNode != null ==> rightNode.Valid() && rightNode.ValidHeap();
       }
     }
   }
@@ -475,16 +468,17 @@ class Treap {
     modifies if tree.root != null then tree.root.Repr else {}
     ensures left != null ==> left.Valid()
     ensures right != null ==> right.Valid()
-    ensures left != null && right != null ==> fresh(right) || fresh(left) // One of the sides must be a new instance
+    ensures left != null && right != null ==> fresh(right) && fresh(left) // One of the sides must be a new instance
     ensures tree.root != null ==> right != null || left != null // At least one of the sides is not null
     ensures left != null && left.root != null && right != null && right.root != null ==> 
       left.root.Repr !! right.root.Repr && left.root.Values !! right.root.Values
     ensures forall x :: x in (if left != null && left.root != null then left.root.Values else {}) ==> x <= val
     ensures forall x :: x in (if right != null && right.root != null then right.root.Values else {}) ==> x > val
+    ensures tree.Valid()
   {
     var root := tree.root;
     tree.Repr := tree.Repr - if root != null then root.Repr else {};
-    tree.Values := tree.Values - if root != null then root.Values else {};
+    tree.Values := {};
     tree.root := null;
 
     left := null;
@@ -515,10 +509,22 @@ class Treap {
     requires forall x, y :: x in tree1.root.Values && y in tree2.root.Values ==> x < y
     modifies tree1, tree2, tree1.root.Repr, tree2.root.Repr;
     ensures fresh(merged)
-    ensures merged.Valid()
+    ensures merged.Valid() && tree1.Valid() && tree2.Valid()
   {
+    // Clear the input tree
+    var root1 := tree1.root;
+    var root2 := tree2.root;
+
+    tree1.Repr := tree1.Repr - tree1.root.Repr;
+    tree1.Values := {};
+    tree1.root := null;
+
+    tree2.Repr := tree2.Repr - tree2.root.Repr;
+    tree2.Values := {};
+    tree2.root := null;
+
     merged := new Treap();
-    var newRoot := MergeNode(tree1.root, tree2.root);
+    var newRoot := MergeNode(root1, root2);
     merged.root := newRoot;
     merged.Repr := merged.Repr + newRoot.Repr;
     merged.Values := merged.Values + newRoot.Values;
