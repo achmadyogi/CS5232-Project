@@ -369,6 +369,130 @@ class Treap {
   {
     priority := (val * 654321/123) % 1000;
   }
+
+  static method splitNode(node: TreapNode, val: int) 
+    returns (leftNode: TreapNode?, rightNode: TreapNode?)
+    requires node.Valid() && node.ValidHeap()
+    modifies node.Repr
+    modifies if node.left != null then node.left.Repr else {}
+    modifies if node.right != null then node.right.Repr else {}
+    decreases node.Repr
+    ensures leftNode != null ==> leftNode.Valid() && leftNode.ValidHeap()
+    ensures rightNode != null ==> rightNode.Valid() && rightNode.ValidHeap()
+    ensures old(node.Repr) == (if leftNode != null then leftNode.Repr else {})
+      + (if rightNode != null then rightNode.Repr else {})
+    ensures old(node.Values) == (if leftNode != null then leftNode.Values else {})
+      + (if rightNode != null then rightNode.Values else {})
+    ensures leftNode != null && rightNode != null ==> 
+      leftNode.Repr !! rightNode.Repr && leftNode.Values !! rightNode.Values
+    ensures forall x :: x in (if leftNode != null then leftNode.Values else {}) ==> x <= val
+    ensures forall x :: x in (if rightNode != null then rightNode.Values else {}) ==> x > val
+    ensures leftNode != null ==> leftNode.priority <= old(node.priority)
+    ensures rightNode != null ==> rightNode.priority <= old(node.priority)
+  {
+    leftNode := null;
+    rightNode := null;
+    if (node.key == val) {
+      if (node.right != null) {
+        rightNode := node.right;
+        node.Repr := node.Repr - node.right.Repr;
+        node.Values := node.Values - node.right.Values;
+        node.right := null;
+      }
+      leftNode := node;
+      assert leftNode != null ==> leftNode.Valid() && leftNode.ValidHeap();
+      assert rightNode != null ==> rightNode.Valid() && rightNode.ValidHeap();
+      return;
+    }
+
+    if (node.key > val) {
+      // Left
+      if (node.left == null) {
+        rightNode := node;
+        assert leftNode != null ==> leftNode.Valid() && leftNode.ValidHeap();
+        assert rightNode != null ==> rightNode.Valid() && rightNode.ValidHeap();
+        return;
+      } else {
+        var left := node.left;
+        node.left := null;
+        node.Repr := node.Repr - left.Repr;
+        node.Values := node.Values - left.Values;
+        assert node.Valid() && node.ValidHeap();
+        var l, r := splitNode(left, val);
+        assert l != null ==> l.Valid() && l.ValidHeap();
+        assert r != null ==> r.Valid() && r.ValidHeap();
+        leftNode := l;
+        if (r != null) {
+          assert forall x :: x in r.Values ==> x in old(left.Values);
+          assert r.priority <= old(left.priority);
+          node.left := r;
+          node.Repr := node.Repr + r.Repr;
+          node.Values := node.Values + r.Values;
+        }
+        rightNode := node;
+        assert leftNode != null ==> leftNode.Valid() && leftNode.ValidHeap();
+        assert rightNode != null ==> rightNode.Valid() && rightNode.ValidHeap();
+      }
+    } else {
+      // Right
+      if (node.right == null) {
+        leftNode := node;
+        assert leftNode != null ==> leftNode.Valid() && leftNode.ValidHeap();
+        assert rightNode != null ==> rightNode.Valid() && rightNode.ValidHeap();
+        return;
+      } else {
+        var right := node.right;
+        node.right := null;
+        node.Repr := node.Repr - right.Repr;
+        node.Values := node.Values - right.Values;
+        assert node.Valid() && node.ValidHeap();
+        var l, r := splitNode(right, val);
+        assert l != null ==> l.Valid() && l.ValidHeap();
+        assert r != null ==> r.Valid() && r.ValidHeap();
+        rightNode := r;
+        if (l != null) {
+          assert forall x :: x in l.Values ==> x in old(right.Values);
+          assert l.priority <= old(right.priority);
+          node.right := l;
+          node.Repr := node.Repr + l.Repr;
+          node.Values := node.Values + l.Values;
+        }
+        leftNode := node;
+        assert leftNode != null ==> leftNode.Valid() && leftNode.ValidHeap();
+        assert rightNode != null ==> rightNode.Valid() && rightNode.ValidHeap();
+      }
+    }
+  }
+
+    static method split(tree: Treap, val: int) returns (left: Treap?, right: Treap?)
+    requires tree.Valid()
+    modifies tree
+    modifies if tree.root != null then tree.root.Repr else {}
+    ensures left != null ==> left.Valid()
+    ensures right != null ==> right.Valid()
+    ensures left != null && right != null ==> fresh(right) || fresh(left) // One of the sides must be a new instance
+    ensures tree.root != null ==> right != null || left != null // At least one of the sides is not null
+  {
+    left := null;
+    right := null;
+    if (tree.root == null) {
+      return;
+    }
+
+    var leftNode, rightNode := splitNode(tree.root, val);
+    if (leftNode != null) {
+      left := new Treap();
+      left.root := leftNode;
+      left.Repr := left.Repr + leftNode.Repr;
+      left.Values := left.Values + leftNode.Values;
+    }
+    if (rightNode != null) {
+      right := new Treap();
+      right.root := rightNode;
+      right.Repr := right.Repr + rightNode.Repr;
+      right.Values := right.Values + rightNode.Values;
+    }
+  }
 }
 
 // Used for testing
@@ -454,10 +578,19 @@ method Main() {
 
   // Build
   print "Build a new tree with input values: 3, 4, 2, 1, 10\n";
-  var arr := new int[5][3, 4, 2, 1, 10];
+  var arr := new int[10][3, 4, 2, 1, 10, 8, 7, 6, 9, 5];
   var newTree := Treap.Build(arr);
   print "\n";
 
   print "In Order Traversal\n";
   Treap.InOrderTraversal(newTree.root);
+
+  var left, right := Treap.split(newTree, 5);
+  if (left != null && left.root != null) {
+    Treap.InOrderTraversal(left.root);
+  }
+  print "\n\n";
+  if (right != null && right.root != null) {
+    Treap.InOrderTraversal(right.root);
+  }
 }
