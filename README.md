@@ -18,6 +18,7 @@ After installing Dafny extension, please ensure that the following configuration
 
 To configure these, open Visual Studio Code settings (press `Ctrl` + `,` for Windows or `Command` + `,` for Mac), search for `Dafny`, and update the settings as required. To change the verification time limit, we may need to configure that in `settings.json` file. To open the file, press `Ctrl` / `Command` + `shift` + `P` and search using keyword `Open User Settings`. We can now append the time limit in the file as follows.
 ```json
+{
     ...
     "dafny.verificationTimeLimit": 120
 }
