@@ -1,0 +1,27 @@
+\newpage
+\section{Introduction}
+\setcounter{subsection}{0}
+
+\examplefigure[0.5]{images/treap.png}{This figure gives an example of treap data structure. The black number is the key, whereas the red number is the heap priority}{fig:treap}
+
+\noindent A treap, also known as a Cartesian tree, is a data structure that combines the features of a binary search tree (BST) and a binary heap. The combination allows the tree to have a logarithmic depth of its number of nodes so that, with high probability, the tree is balanced. Its randomness property makes it efficient to maintain a dynamic set of ordered elements while allowing for fast search, insertion, and deletion operations. During these operations, treap does not guarantee its topology to be consistently balanced. Hence, one must be careful when using this data structure if a specific time-bound is required. Treaps are particularly useful in cases where the data set changes over time and we want to maintain the elements in a sorted manner.\\
+
+In a treap, each node has two attributes: a key and a priority (Figure \ref*{fig:treap}). The key is used to maintain the binary search tree property, that is to ensure for each node, all the keys in its left subtree are smaller than the node's key, and all the keys in its right subtree are larger than the node's key. The priority, on the other hand, is used to maintain the heap property, that is to ensure for each node, the priority is always greater than or equal to the priority of its children.\\
+
+Since treaps use random priorities, the expected height of the treap is $O(\log n)$, which means that the search, insertion, and deletion operations are efficient in practice. However, the worst-case complexity of treap operations can be $O(n)$, which is idential with a linked-list. This bad scenario occurs when the priorities lead to a highly unbalanced tree. Despite having some drawbacks, treaps are often used because of their simplicity and good average-case performance.\\
+
+\subsection{Treap Operations}
+Treap operations are just the same as operations used in binary search tree. The basic operations includes build, insert, delete, search, split, and merge. There are also other operations such as union and intersect. But we will only discuss the six previously mentioned operations as this project can handle so far.\\
+
+\noindent \textbf{Insert} - The insert method takes a key as an input. The key can be various forms of data types. For simplicity, let's take an integer as the input. The heap priority, which is also an integer, will be created from the input in a deterministic manner. We can deploy a hash function to perform this operation. Once the method populates a key and a priority, it can start traversing the node to find an appropriate position. A rotation might perform to restore heap property. The average complexity of this operation is $O(\log n)$, but it can be as bad as $O(n)$ if the tree forms a linked-list. Therefore, picking a good hash function for heap property is essential to avoid forming an unbalanced tree.\\
+
+\noindent \textbf{Build} - The build method takes an array of keys as an input. It basically performs insertions for multiple keys in a row. Therefore, we can simply call insert method for the build implementation. Depending on how the tree is structured, it can take a linear time $O(n)$ if the input array is already sorted. However, sorting an array can take $O(n \log n)$ times assuming we are using merge sort. In this project, we will not limit the input array such that it can be in a random order and has duplicates. Hence, the overall time complexity would be $O(m \log n)$ where $m$ is the array length and $n$ is the total available nodes.\\
+
+\textbf{Delete} - The delete method 
+\subsubsection{Search}
+\subsubsection{Split}
+\subsubsection{Merge}
+
+\subsection{Treap Applications}
+
+
