@@ -39,6 +39,8 @@ class Treap {
     ensures |treap.root.Values| <= values.Length
     ensures forall x :: 0 <= x < values.Length ==> (values[x] in treap.root.Values 
       && values[x] in treap.Values)
+    ensures forall x :: x in treap.Values <==> 
+      exists y :: (0 <= y < values.Length && values[y] == x)
   {
     treap := new Treap();
     var i := 0;
@@ -53,6 +55,7 @@ class Treap {
       invariant treap.Values == insertedValues
       invariant treap.root != null ==> treap.root.Values == insertedValues
       invariant forall x :: 0 <= x < i ==> values[x] in treap.Values && values[x] in treap.root.Values
+      invariant forall x :: x in treap.Values ==> (exists y :: 0 <= y < i && values[y] == x)
     {
       assert treap.root != null ==> treap.Values == treap.root.Values;
       treap.Insert(values[i]);
@@ -462,7 +465,7 @@ class Treap {
     }
   }
 
-    static method Split(tree: Treap, val: int) returns (left: Treap?, right: Treap?)
+  static method Split(tree: Treap, val: int) returns (left: Treap?, right: Treap?)
     requires tree.Valid()
     modifies tree
     modifies if tree.root != null then tree.root.Repr else {}
@@ -582,189 +585,97 @@ class Treap {
       merged := node2;
     }
   }
-
-  // static method UnionNode(node1: TreapNode, node2: TreapNode) returns(union: TreapNode)
-  //   requires node1.Valid() && node1.ValidHeap() && node2.Valid() && node2.ValidHeap()
-  //   modifies node1.Repr, node2.Repr
-  //   decreases node1.Repr, node2.Repr
-  //   ensures union.Valid() && union.ValidHeap()
-  //   ensures union.Repr == old(node1.Repr) + old(node2.Repr)
-  //   ensures union.Values == old(node1.Values) + old(node2.Values)
-  // {
-
-  //   if (node1.key == node2.key) {
-  //     // Use node1 as the root
-  //     var left := node1.left;
-  //     node1.Repr := node1.Repr - node1.left.Repr;
-
-  //     if (node1.left != null && node2.left != null) {
-  //       left := UnionNode(node1.left, node2.left);
-  //     } else if (node1.left == null && node2.left != null) {
-  //       left := node2.left;
-  //     }
-
-  //     var right := node1.right;
-  //     if (node1.right != null && node2.right != null) {
-  //       right := UnionNode(node1.right, node2.right);
-  //     } else if (node1.right == null && node2.right != null) {
-  //       left := node2.right;
-  //     }
-
-  //     if (left != null) {
-
-  //     }
-  //     union := node1;
-  //     return;
-  //   }
-
-  //   if (node1.priority >= node2.priority) {
-  //     // node1 as root -> split node2 using node1's key
-  //     var left, right := SplitNode(node2, node1.key);
-  //     if (left != null) {
-  //       var leftUnion := left;
-  //       if (node1.left != null) {
-  //         var leftOfNode1 := node1.left;
-  //         node1.Repr := node1.Repr - node1.left.Repr;
-  //         node1.Values := node1.Values - node1.left.Values;
-  //         node1.left := null;
-  //         leftUnion := UnionNode(leftOfNode1, left);
-  //       }
-  //       node1.left := leftUnion;
-  //       node1.Repr := node1.Repr + leftUnion.Repr;
-  //       node1.Values := node1.Values + leftUnion.Values;
-  //     }
-  //     if (right != null) {
-  //       var rightUnion := right;
-  //       if (node1.right != null) {
-  //         var rightOfNode1 := node1.right;
-  //         node1.Repr := node1.Repr - node1.right.Repr;
-  //         node1.Values := node1.Values - node1.right.Values;
-  //         node1.right := null;
-  //         rightUnion := UnionNode(rightOfNode1, right);
-  //       }
-  //       node1.right := rightUnion;
-  //       node1.Repr := node1.Repr + rightUnion.Repr;
-  //       node1.Values := node1.Values + rightUnion.Values;
-  //     }
-  //     union := node1;
-  //   } else {
-  //     // node2 as root -> split node1 using node2's key
-  //     var left, right := SplitNode(node1, node2.key);
-  //     if (left != null) {
-  //       var leftUnion := left;
-  //       if (node2.left != null) {
-  //         var leftOfNode2 := node2.left;
-  //         node2.Repr := node2.Repr - node2.left.Repr;
-  //         node2.Values := node2.Values - node2.left.Values;
-  //         node2.left := null;
-  //         leftUnion := UnionNode(leftOfNode2, left);
-  //       }
-  //       node2.left := leftUnion;
-  //       node2.Repr := node2.Repr + leftUnion.Repr;
-  //       node2.Values := node2.Values + leftUnion.Values;
-  //     }
-  //     if (right != null) {
-  //       var rightUnion := right;
-  //       if (node2.right != null) {
-  //         var rightOfNode2 := node2.right;
-  //         node2.Repr := node2.Repr - node2.right.Repr;
-  //         node2.Values := node2.Values - node2.right.Values;
-  //         node2.right := null;
-  //         rightUnion := UnionNode(rightOfNode2, right);
-  //       }
-  //       node2.right := rightUnion;
-  //       node2.Repr := node2.Repr + rightUnion.Repr;
-  //       node2.Values := node2.Values + rightUnion.Values;
-  //     }
-  //     union := node2;
-  //   }
-  // }
 }
 
 // Used for testing
 method Main() {
-  // print "Insert 3,4,2,1,10\n";
-  // var treap := new Treap();
-  // treap.Insert(3);
-  // treap.Insert(4);
-  // treap.Insert(2);
-  // treap.Insert(1);
-  // treap.Insert(10);
-  // assert treap.Valid();
-  // print "In Order Traversal\n";
-  // Treap.InOrderTraversal(treap.root);
-  // print "\n";
-  // print "Pre Order Traversal\n";
-  // Treap.PreOrderTraversal(treap.root);
+  print "======= TREAP DEMO =======\n\n";
+  print "------- Insert -------\n";
+  print "Values: {3,4,2,1,10}\n";
+  var treap := new Treap();
+  treap.Insert(3);
+  treap.Insert(4);
+  treap.Insert(2);
+  treap.Insert(1);
+  treap.Insert(10);
+  assert treap.Valid();
+  print "In Order Traversal\n";
+  Treap.InOrderTraversal(treap.root);
+  print "\n";
+  print "Pre Order Traversal\n";
+  Treap.PreOrderTraversal(treap.root);
 
-  // print "\n\n";
-  // print "      (3, 939)\n";
-  // print "       /    \\ \n";
-  // print " (2, 639)   (4,278)\n";
-  // print "   /           \\ \n";
-  // print "(1,319)       (10, 196)\n";
-  // print "\n\n";
+  print "\n\nHard-Coded Visualisation\n";
+  print "      (3, 939)\n";
+  print "       /    \\ \n";
+  print " (2, 639)   (4,278)\n";
+  print "   /           \\ \n";
+  print "(1,319)       (10, 196)\n";
+  print "----------------------\n\n";
 
-  // print "Searching a node with key = 4\n";
-  // var node4 := treap.Search(4);
-  // if (node4 != null) {
-  //   print "Node found: (",node4.key,",",node4.priority,")\n";
-  // } else {
-  //   print "null";
-  // }
-  // print "\n";
+  print "------- Search -------\n";
+  print "Searching a node with key = 4\n";
+  var node4 := treap.Search(4);
+  if (node4 != null) {
+    print "Node found: (",node4.key,",",node4.priority,")\n";
+  } else {
+    print "null";
+  }
+  print "----------------------\n";
 
-  // print "Deleting a node with key = 4\n";
-  // treap.Delete(4);
-  // print "\n\n";
+  print "------- Delete -------\n";
+  print "Deleting a node with key = 4\n";
+  treap.Delete(4);
+  print "\n\n";
 
-  // print "Searching a node with key = 4\n";
-  // var node4AfterDelete := treap.Search(4);
-  // if (node4AfterDelete != null) {
-  //   print "Node found: (",node4AfterDelete.key,",",node4AfterDelete.priority,")\n";
-  // } else {
-  //   print "null";
-  // }
-  // print "\n";
+  print "Searching a node with key = 4\n";
+  var node4AfterDelete := treap.Search(4);
+  if (node4AfterDelete != null) {
+    print "Node found: (",node4AfterDelete.key,",",node4AfterDelete.priority,")\n";
+  } else {
+    print "null";
+  }
+  print "\n";
 
-  // print "In Order Traversal\n";
-  // Treap.InOrderTraversal(treap.root);
-  // print "\n";
+  print "In Order Traversal\n";
+  Treap.InOrderTraversal(treap.root);
+  print "\n";
 
-  // print "Pre Order Traversal\n";
-  // Treap.PreOrderTraversal(treap.root);
+  print "Pre Order Traversal\n";
+  Treap.PreOrderTraversal(treap.root);
 
-  // print "\n\n";
-  // print "      (3, 939)\n";
-  // print "       /    \\ \n";
-  // print " (2, 639)   (10, 196)\n";
-  // print "   /           \n";
-  // print "(1,319)     \n";
-  // print "\n\n";
+  print "\n\n";
+  print "      (3, 939)\n";
+  print "       /    \\ \n";
+  print " (2, 639)   (10, 196)\n";
+  print "   /           \n";
+  print "(1,319)     \n";
+  print "\n\n";
 
-  // print "Deleting a node with key = 3\n";
-  // treap.Delete(3);
-  // assert treap.Valid();
+  print "Deleting a node with key = 3\n";
+  treap.Delete(3);
+  assert treap.Valid();
 
-  // print "\n";
+  print "\n";
 
-  // print "In Order Traversal\n";
-  // Treap.InOrderTraversal(treap.root);
-  // print "\n";
+  print "In Order Traversal\n";
+  Treap.InOrderTraversal(treap.root);
+  print "\n";
 
-  // print "Pre Order Traversal\n";
-  // Treap.PreOrderTraversal(treap.root);
-  // print "\n";
+  print "Pre Order Traversal\n";
+  Treap.PreOrderTraversal(treap.root);
+  print "\n";
 
-  // print "\n\n";
-  // print "      (2, 639)\n";
-  // print "       /    \\ \n";
-  // print "  (1,319)   (10, 196)\n";
-  // print "\n\n";
+  print "\n\n";
+  print "      (2, 639)\n";
+  print "       /    \\ \n";
+  print "  (1,319)   (10, 196)\n";
+  print "----------------------\n\n";
 
   // Build
-  print "Build a new tree with input values: 3, 4, 2, 1, 10\n";
-  var arr := new int[10][3, 4, 2, 1, 10, 8, 7, 6, 9, 5];
+  print "------- Build -------\n";
+  print "Build a new tree with input values: {17, 4, 3, 75, 38, 93, 54, 11, 35, 92}\n";
+  var arr := new int[10][17, 4, 3, 75, 38, 93, 54, 11, 35, 92];
   var newTree := Treap.Build(arr);
   print "\n";
 
@@ -772,32 +683,44 @@ method Main() {
   Treap.InOrderTraversal(newTree.root);
   print "\n";
   Treap.PreOrderTraversal(newTree.root);
+  print "---------------------\n\n";
 
-  print "\n\n";
-  var left, right := Treap.Split(newTree, 5);
+  print "------- Split -------\n";
+  print "Split using the previous data used during Build...\n";
+  print "Split in 35\n";
+  var left, right := Treap.Split(newTree, 35);
   if (left != null && left.root != null) {
+    print "Left Tree\n";
+    print "In Order Traversal\n";
     Treap.InOrderTraversal(left.root);
     print "\n";
+    print "Pre Order Traversal\n";
     Treap.PreOrderTraversal(left.root);
   }
   print "\n\n";
   if (right != null && right.root != null) {
+    print "Right Tree\n";
+    print "In Order Traversal\n";
     Treap.InOrderTraversal(right.root);
     print "\n";
+    print "Pre Order Traversal\n";
     Treap.PreOrderTraversal(right.root);
   }
-  print "\n\n";
-  // var arr1 := new int[5][3, 4, 2, 1, 5];
-  // var arr2 := new int[5][10, 8, 7, 6, 9];
+  print "---------------------\n\n";
+
+  // WARNING: MERGE TEST REQUIRES VERY LONG TIME (5 MINUTES ARE NOT ENOUGH)
+  // print "------- Merge -------\n";
+  // print "Left Tree: {17, 4, 3, 11, 35}\n";
+  // print "Right Tree: {75, 38, 93, 54, 92}\n";
+  // var arr1 := new int[5][17, 4, 3, 11, 35];
+  // var arr2 := new int[5][75, 38, 93, 54, 92];
   // var tree1 := Treap.Build(arr1);
   // var tree2 := Treap.Build(arr2);
-  // assert tree1.root != null && tree2.root != null;
-  // assert tree1.root.Values * tree2.root.Values == {};
-  // assert forall x, y :: x in tree1.root.Values && y in tree2.root.Values ==> x < y;
-  if (left != null && left.root != null && right != null && right.root != null) {
-    var merged := Treap.Merge(left, right);
-  }
-  // Treap.InOrderTraversal(merged.root);
+  // var merged := Treap.Merge(tree1, tree2);
 
-  // 5 - 4 - 3 - 2 - 1
+  // print "In Order Traversal\n";
+  // Treap.InOrderTraversal(merged.root);
+  // print "Pre Order Traversal\n";
+  // Treap.PreOrderTraversal(merged.root);
+  // print "---------------------\n";
 }
