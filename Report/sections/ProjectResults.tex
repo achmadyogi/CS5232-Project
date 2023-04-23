@@ -1,0 +1,33 @@
+\newpage
+\section{Project Results}
+\setcounter{subsection}{0}
+
+In this section we will explain about Treap Data Structure specific to our implementation. To get started, we have posted our project into Github with public access so that anyone can visit. We released our first and, probably, also the last version named \textit{v1.0} that you can check \href{https://github.com/achmadyogi/CS5232-Project/tree/v1.0}{here}. Our treap data structure is organized into two Dafny files called \textit{treapNode.dfy} and \textit{treap.dfy}. You can check the \textit{readme} file to explore further. In general, we applied the following design as shown in Figure \ref*{fig:treap}.\\
+
+\examplefigure[1]{images/class-diagram.png}{Treap and TreapNode Class}{fig:class-diagram}
+
+The diagram shown in Figure \ref*{fig:treap} is the UML class diagram of the Treap and TreapNode. The TreapNode encapsulates the node of a Treap, storing integer values for the node's associated key and priority, as well as pointers to the left and right child TreapNodes. The Treap class holds a pointer to the root TreapNode and defines the methods associated with a Treap.\\
+
+Some operations are static methods (those with underlines) as the nature of their functionality that do not affect a treap object instance. For example, insert method is a non-static method because it is intended to update a treap instance's contents. However, split implementation uses static method as it is intended as a tool to create two new treaps from one treap input. It will not be effective if we declare split as a non-static method because we need to create a new treap instance before we can use the tool. It also has nothing to do with the newly created instance.\\
+
+\subsection{Ghost Variables and Predicates}
+Apart from the concrete fields and methods as shown in the diagram, the classes also define several ghost variables and predicates that are only used to perform verification and will not be part of the compiled program. This section will list and explain the rationale of these ghost fields.\\
+
+\begin{tabular}{a}
+\begin{lstlisting}
+var Repr: set<TreapNode>;
+var Values: set<int>;
+
+ghost predicate Valid() {}
+ghost predicate ValidHeap() {}
+\end{lstlisting}
+\end{tabular}
+
+\subsection{Available Methods}
+The implemented methods are available in two versions: a main method that interacts with the Treap at a higher level, and a Node version of the same method that interacts with individual TreapNodes. This separation allows us to define pre- and post-conditions separately at the Treap and TreapNode levels, ensuring the validity of the Treap before and after the main methods are executed, as well as the validity of the desired properties of individual nodes during individual recursive calls to the Node-level methods.\\
+
+The implementation details of methods will not be mentioned in detail in this report as it is very similar to commonly available concrete implementations of balanced binary search trees utilising rotations to maintain balance, such as AVL trees, in other programming languages like Java and C++. The only additional statements within the implementation of methods are the updating of the appropriate ghost variables to ensure consistency between the logical and concrete representation of the data structure. \\
+
+We will instead draw attention to the pre- and post-conditions of our implemented methods to provide a comprehensive overview of the guarantees that each method offers and clarify the purpose of specific post-conditions, and the role they play in verifying the correctness of our implementation. Our objective is to offer a detailed explanation of the pre- and post-conditions in order to provide a better understanding of how they work together to ensure the correctness of our program.\\
+
+
