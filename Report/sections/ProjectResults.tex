@@ -13,21 +13,60 @@ Some operations are static methods (those with underlines) as the nature of thei
 \subsection{Ghost Variables and Predicates}
 Apart from the concrete fields and methods as shown in the diagram, the classes also define several ghost variables and predicates that are only used to perform verification and will not be part of the compiled program. This section will list and explain the rationale of these ghost fields.\\
 
+Class \textit{TreapNode} contains two \textit{Ghost} variables called \textit{Repr} and \textit{Values}. \textit{Repr} has been a general practice in Dafny to provide a decrease counter in a recursive call so that Dafny understands where the program should terminate. It is a set of objects, which are instances of \textit{TreapNode}s of the node itself and its all descendants. Variable \textit{Values} is another \textit{Ghost} variable that stores all keys of the node and its all descendants. The later variable is important to validate the binary search property.\\
+
 \begin{tabular}{a}
 \begin{lstlisting}
-var Repr: set<TreapNode>;
-var Values: set<int>;
+class TreapNode {
+    var Repr: set<TreapNode>;
+    var Values: set<int>;
 
-ghost predicate Valid() {}
-ghost predicate ValidHeap() {}
+    ghost predicate Valid() {}
+    ghost predicate ValidHeap() {}
+    ...
+}
 \end{lstlisting}
-\end{tabular}
+\end{tabular}\\
+
+A critical message for the node design is that each node can only access its children. It has no access to know what its parent is. This situation restricts our ability to validate a binary search property because we cannot say that the right child's key is strictly less than the parent's. Variable \textit{Values} solves this issue as the keys of a node's descendants are stored in it, improving its parent's visibility to check that all keys in its left descendants are strictly less than its value, and vice versa.
+
+\examplefigure[0.7]{images/values.png}{An illustration on how variable \textit{Values} helps a node to verify binary search property in a recursive call}{fig:ghost-values}
+
+Class \textit{TreapNode} has two \textit{Ghost} predicates: \textit{Valid} and \textit{ValidHeap}. Predicate \textit{Valid} is used to verify the binary search property as well as giving Dafny a helper for recursive calls. Whereas predicate \textit{ValidHeap} is used to verify the heap properties. It might seem weird to know that our design requires two verification predicates. In fact, the separation is necessarry to provide a compensation in some certain scenarios to have a state violation. In any change of states, binary search properties must always hold, but it is not mandatory for the heap properties -- The design will eventually force the later scenario to be valid. One simple case is during the rotation. Rotation requires the input node's heap to be invalid, or else we have no reason to rotate the nodes. An invalid heap can happen after insertion where the parent of the new node realizes that it has lower heap property.\\
+
+Now we are moving to the next class, \textit{Treap}. Class \textit{Treap} plays a role as a real tree that gives a shelter to nodes by knowing their root node. In this class, all operations take place. The \textit{Ghost} variables and predicates are just the same as \textit{TreapNode}, except that it has no predicate \textit{ValidHeap}. \textit{Repr} and \textit{Values} have the same contents as \textit{TreapNode} just that $\vert TreapNode.Repr \vert == \vert Treap.Repr \vert + 1$ with additional instance from the tree itself. The copies are imperative to verify that the tree is holding the correct root node. Furthermore, class \textit{Treap} requires all properties to be valid in all states so that it has only one \textit{Ghost}predicate (\textit{Valid}).\\
+
+\begin{tabular}{a}
+    \begin{lstlisting}
+    class Treap {
+        var Repr: set<TreapNode>;
+        var Values: set<int>;
+    
+        ghost predicate Valid() {}
+        ...
+    }
+    \end{lstlisting}
+    \end{tabular}\\
 
 \subsection{Available Methods}
 The implemented methods are available in two versions: a main method that interacts with the Treap at a higher level, and a Node version of the same method that interacts with individual TreapNodes. This separation allows us to define pre- and post-conditions separately at the Treap and TreapNode levels, ensuring the validity of the Treap before and after the main methods are executed, as well as the validity of the desired properties of individual nodes during individual recursive calls to the Node-level methods.\\
 
 The implementation details of methods will not be mentioned in detail in this report as it is very similar to commonly available concrete implementations of balanced binary search trees utilising rotations to maintain balance, such as AVL trees, in other programming languages like Java and C++. The only additional statements within the implementation of methods are the updating of the appropriate ghost variables to ensure consistency between the logical and concrete representation of the data structure. \\
 
-We will instead draw attention to the pre- and post-conditions of our implemented methods to provide a comprehensive overview of the guarantees that each method offers and clarify the purpose of specific post-conditions, and the role they play in verifying the correctness of our implementation. Our objective is to offer a detailed explanation of the pre- and post-conditions in order to provide a better understanding of how they work together to ensure the correctness of our program.\\
+We will instead draw attention to the pre- and post-conditions of our implemented methods to provide a comprehensive overview of the guarantees that each method offers and clarify the purpose of specific post-conditions, and the role they play in verifying the correctness of our implementation. Our objective is to offer a detailed explanation of the pre- and post-conditions in order to provide a better understanding of how they work together to ensure the correctness of our program. We have listed the verification details for pre- and post-conditions in \hyperref[sec:AppendixA]{Appendix A}.\\
+
+\subsection{Property Value Generator}
+The only factor to balance a treap is its heap priority. Picking an "appropriate" value will secure the treap from being highly unbalanced. For example, if the priority increases as the key gets higher, it will led to a linked-list topology. Therefore, on increasing key, the priority must behave either going up or going down under roughly the same probability. The tools for generating random number can be arbitrary. In this project, we use the following formula to generate random numbers from an input key.\\
+\begin{equation}
+    % \begin{split}
+    \text{priority} = (\text{val} * \frac{654321}{123}) \% 1000
+    % \end{split}
+\end{equation}
+
+There is nothing special about the formula. It is just an operation of arbitrary numbers to assign at most a thousand distinct possible priorities from a given input value. We can check its distribution from Figure \ref*{fig:hash}. The formula gives results that oscillate up and down systematically over the range 0 to 1000. An oscillation indicates that collision exists, and the pattern will recur after some intervals.
+
+\examplefigure[1]{images/hash.png}{$x$ is the first thousand keys, and $y$ is the function result}{fig:hash}
+
+The goal of having a hash function is to create a random behavior of heap priorities on increasing key values - We probably want a plot distribution like heartbeats. Our current priority implementation clearly is not that effective, but it is enough for this project demonstration. A better suggestion might be using cryptographic hash algorithms such as MD, SHA, RIPEMD, etc because it gives us a relatively perfect hash function. However, there are some overheads to do before we get an integer value from these algorithms. For example, an MD2 hash value consists of 16 characters length. We still need to convert those characters into a 32-bit integer value. There are many ways to do this conversion, such as playing around with bits by taking the first two bits of each character to form a 32-bit integer. Depending on how treaps are implemented, using cryptographic hash function might be heavy if fast performance is the main target. Therefore, having a simple function is also not a bad idea.
 
 
